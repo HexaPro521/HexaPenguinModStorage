@@ -11,7 +11,7 @@ app.use(cors());
 // Global server memory to hold your variables while the app is active
 let store = {};
 
-// 🟢 Fixes the "Not Found" error when visiting the main URL in your browser
+// Fixes the "Not Found" error when visiting the main URL in your browser
 app.get('/', (req, res) => {
     res.status(200).json({ 
         status: "online", 
@@ -34,14 +34,14 @@ app.get('/set/:key', (req, res) => {
     res.json({ message: `Saved ${key} successfully`, currentStore: store });
 });
 
-// 2. GET: /get/var1 or /get
-app.get('/get/:key?', (req, res) => {
+// 2. GET ALL: /get
+app.get('/get', (req, res) => {
+    return res.json(store);
+});
+
+// 3. GET SINGLE KEY: /get/var1
+app.get('/get/:key', (req, res) => {
     const { key } = req.params;
-    
-    // If no key is provided, return everything currently saved
-    if (!key) {
-        return res.json(store);
-    }
 
     // If the variable doesn't exist yet, return a 404 error
     if (!(key in store)) {
@@ -51,7 +51,7 @@ app.get('/get/:key?', (req, res) => {
     res.json({ [key]: store[key] });
 });
 
-// 3. REMOVE: /remove/var1
+// 4. REMOVE: /remove/var1
 app.get('/remove/:key', (req, res) => {
     const { key } = req.params;
 
