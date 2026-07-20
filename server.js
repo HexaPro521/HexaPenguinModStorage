@@ -2,64 +2,55 @@ const express = require('express');
 const cors = require('cors');
 
 const app = express();
-// Render automatically injects process.env.PORT. Fallback to 3000 locally.
 const PORT = process.env.PORT || 3000; 
 
-// Enable CORS so your PenguinMod projects can talk to this server
 app.use(cors());
 
-// Global server memory to hold your variables while the app is active
+// Global server memory
 let store = {};
 
-// Fixes the "Not Found" error when visiting the main URL in your browser
 app.get('/', (req, res) => {
     res.status(200).json({ 
         status: "online", 
-        message: "Passkey Variable Host is running perfectly on Render!" 
+        message: "Passkey isolated server is running perfectly!" 
     });
 });
 
-// 1. SET: Accept any user token sent up by the extension blocks
-app.get('/set/:key', (req, res) => {
-    const { key } = req.params;
+// 1. SET: Expects both the passkey and the variable name separated by a colon
+app.get('/set/:passkey_token', (req, res) => {
+    // Express will capture the entire "hjhvikvv:score" string inside req.params.passkey_token
+    const storageKey = req.params.passkey_token;
     const val = req.query.val;
-    const token = req.headers['x-user-token'] || 'anonymous'; // Grab custom token or fallback
 
     if (val === undefined) {
         return res.status(400).json({ error: "Missing 'val' parameter." });
     }
 
-    // Uniquely saves it under the custom passkey prefix (e.g., "hjhvikvv:score")
-    const storageKey = `${token}:${key}`;
+    // This directly creates "hjhvikvv:score" as a completely unique key in memory
     store[storageKey] = val;
 
-    res.json({ message: "Saved securely.", currentStore: store });
+    res.json({ message: "Saved cleanly.", currentStore: store });
 });
 
-// 2. GET ALL: Debug route to see raw memory mapping
+// 2. GET ALL: Debug route to see the raw map structure
 app.get('/get', (req, res) => {
     return res.json(store);
 });
 
-// 3. GET SINGLE KEY: Look up by user token prefix
-app.get('/get/:key', (req, res) => {
-    const { key } = req.params;
-    const token = req.headers['x-user-token'] || 'anonymous';
-    
-    const storageKey = `${token}:${key}`;
+// 3. GET SINGLE VARIABLE
+app.get('/get/:passkey_token', (req, res) => {
+    const storageKey = req.params.passkey_token;
 
     if (!(storageKey in store)) {
-        return res.status(404).json({ error: "Variable not found." });
+        return res.status(404).json({ error: "Variable not found for this passkey." });
     }
 
-    res.json({ [key]: store[storageKey] });
+    res.json({ [storageKey]: store[storageKey] });
 });
 
-// 4. REMOVE: Deletes the key under this passkey
-app.get('/remove/:key', (req, res) => {
-    const { key } = req.params;
-    const token = req.headers['x-user-token'] || 'anonymous';
-    const storageKey = `${token}:${key}`;
+// 4. REMOVE SINGLE VARIABLE
+app.get('/remove/:passkey_token', (req, res) => {
+    const storageKey = req.params.passkey_token;
 
     if (!(storageKey in store)) {
         return res.status(404).json({ error: "Variable does not exist." });
@@ -69,7 +60,6 @@ app.get('/remove/:key', (req, res) => {
     res.json({ message: "Removed successfully." });
 });
 
-// Bind to 0.0.0.0 so Render can route public traffic into the app
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Passkey variable server running on port ${PORT}`);
+    console.log(`Isolated variable server running on port ${PORT}`);
 });
